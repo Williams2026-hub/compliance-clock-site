@@ -1226,5 +1226,265 @@ body {
   :root[data-theme="dark"] { --glass: rgba(40, 42, 48, .96); --glass-strong: #303238; }
 }
 
+/* ==========================================================================
+   v4.3 colour glass
+   More glass, and scheme colour carried inside it: each deadline is its own
+   tinted glass card, and the hero diagram is a 12-month "compliance clock".
+   ========================================================================== */
+
+/* Aurora backdrop: soft, low-saturation colour for the glass to pick up */
+body {
+  background-color: #EDF0F5;
+  background-image:
+    radial-gradient(40vw 38vw at 4% 6%, rgba(8, 189, 186, .16), transparent 62%),
+    radial-gradient(38vw 36vw at 98% 18%, rgba(69, 137, 255, .16), transparent 62%),
+    radial-gradient(44vw 40vw at 70% 70%, rgba(165, 110, 255, .11), transparent 62%),
+    radial-gradient(48vw 40vw at 18% 96%, rgba(66, 190, 101, .10), transparent 62%);
+  background-attachment: fixed;
+}
+:root[data-theme="dark"] body {
+  background-color: #0E0F13;
+  background-image:
+    radial-gradient(40vw 38vw at 4% 6%, rgba(8, 189, 186, .14), transparent 62%),
+    radial-gradient(38vw 36vw at 98% 18%, rgba(69, 137, 255, .16), transparent 62%),
+    radial-gradient(44vw 40vw at 70% 70%, rgba(165, 110, 255, .12), transparent 62%),
+    radial-gradient(48vw 40vw at 18% 96%, rgba(66, 190, 101, .08), transparent 62%);
+}
+
+/* Hero: brighter scheme colours on the dark glass, plus an aurora of its own */
+.hero {
+  --s-ukets: #2DD4CF; --s-euets: #78A9FF; --s-fueleu: #BE95FF; --s-corsia: #33B1FF;
+  --s-cbam: #FF9A4D; --s-esos: #56D17A; --s-secr: #B8C0C8; --s-cca: #FF7EB6;
+  background:
+    radial-gradient(36vw 30vw at 14% 16%, rgba(8, 189, 186, .22), transparent 64%),
+    radial-gradient(34vw 28vw at 90% 8%, rgba(69, 137, 255, .24), transparent 62%),
+    radial-gradient(60vw 34vw at 60% 108%, rgba(165, 110, 255, .22), transparent 62%),
+    #111318;
+}
+
+/* Deadlines: separate tinted glass cards */
+.deadline-list {
+  background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+  display: grid; gap: 12px; overflow: visible; border-radius: 0;
+}
+.deadline {
+  position: relative;
+  background:
+    linear-gradient(105deg, color-mix(in srgb, var(--c) 16%, transparent) 0%, color-mix(in srgb, var(--c) 5%, transparent) 38%, transparent 70%),
+    var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border); border-radius: var(--r-glass); box-shadow: var(--glass-shadow);
+  padding: 20px 22px 20px 26px; transition: transform .18s, box-shadow .18s, background .18s;
+}
+.deadline:last-child { border-bottom: 1px solid var(--glass-border); }
+.deadline::before {
+  display: block; left: 10px; top: 18px; bottom: 18px; width: 4px; border-radius: 4px;
+  background: var(--c); box-shadow: 0 0 14px 1px color-mix(in srgb, var(--c) 60%, transparent); opacity: 1;
+}
+.deadline:hover {
+  transform: translateY(-2px);
+  background:
+    linear-gradient(105deg, color-mix(in srgb, var(--c) 22%, transparent) 0%, color-mix(in srgb, var(--c) 7%, transparent) 40%, transparent 72%),
+    var(--glass-hover);
+  box-shadow: var(--glass-shadow), 0 0 0 1px color-mix(in srgb, var(--c) 30%, transparent);
+}
+.deadline:target { box-shadow: var(--glass-shadow), 0 0 0 2px var(--c); }
+.date-block {
+  align-self: start; padding: 10px 6px; border-radius: 12px;
+  background: color-mix(in srgb, var(--c) 12%, var(--glass-strong));
+  border: 1px solid color-mix(in srgb, var(--c) 25%, var(--glass-border));
+}
+.date-block .mon { color: color-mix(in srgb, var(--c) 85%, var(--text-primary)); }
+.deadline .badge[data-scheme] {
+  background: color-mix(in srgb, var(--c) 16%, var(--glass-strong));
+  color: color-mix(in srgb, var(--c) 70%, var(--text-primary));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 28%, transparent);
+}
+.month-label {
+  display: inline-flex; padding: 6px 14px; border-radius: 999px; margin-bottom: 14px;
+  background: var(--glass); border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); font-size: var(--fs-md);
+}
+.month-label::after { display: none; }
+.month-label small { margin-left: 10px; }
+
+/* Other cards pick up their scheme tint too */
+.scheme-card, .change-card, .horizon-item {
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--c) 14%, transparent) 0%, transparent 55%),
+    var(--glass);
+}
+.scheme-card:hover { background: linear-gradient(160deg, color-mix(in srgb, var(--c) 22%, transparent) 0%, transparent 60%), var(--glass-hover); }
+.scheme-card .abbr::before { width: 10px; height: 10px; box-shadow: 0 0 10px color-mix(in srgb, var(--c) 70%, transparent); }
+.pack-cover { background: radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--c) 55%, transparent), transparent 60%), linear-gradient(140deg, rgba(22, 22, 22, .9), rgba(50, 54, 60, .8)); }
+
+/* More glass: search, strip, switcher */
+.search .input { background-color: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); }
+.scheme-strip { background: var(--glass); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border-color: var(--glass-border); }
+.scheme-strip a::before { border-radius: 50%; box-shadow: 0 0 8px color-mix(in srgb, var(--c) 70%, transparent); }
+
+/* ---------- Compliance clock diagram ---------- */
+.hero .ribbon-wrap { display: block; padding-top: 48px; padding-bottom: 56px; }
+.dial-panel {
+  display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); align-items: center;
+  padding: clamp(16px, 3vw, 32px); border-radius: 20px;
+  background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .7);
+}
+.dial-figure { margin: 0; }
+.dial { width: 100%; height: auto; max-width: 440px; display: block; margin-inline: auto; overflow: visible; }
+.dial-rim { fill: rgba(255, 255, 255, .03); stroke: rgba(255, 255, 255, .14); stroke-width: 1; }
+.dial-sector { fill: #FFFFFF; stroke: rgba(255, 255, 255, .06); stroke-width: 1; }
+.dial-sector.is-now { stroke: rgba(255, 255, 255, .35); }
+.dial-tick { stroke: rgba(255, 255, 255, .18); stroke-width: 1; }
+.dial-month { fill: #8D96A3; font-family: var(--font-sans); font-size: 11px; letter-spacing: .3px; }
+.dial-month.has { fill: #F4F4F4; font-weight: 600; }
+.dial-hand { stroke: #FFFFFF; stroke-width: 2; stroke-linecap: round; opacity: .9; }
+.dial-hand-tip { fill: #FFFFFF; }
+.dial-centre { fill: rgba(17, 19, 24, .78); stroke: rgba(255, 255, 255, .16); stroke-width: 1; }
+.dial-n { fill: #FFFFFF; font-family: var(--font-sans); font-weight: 300; font-size: 54px; letter-spacing: -1px; }
+.dial-n-label { fill: #C6C6C6; font-family: var(--font-sans); font-size: 12px; letter-spacing: .3px; }
+.dial-n-scheme { fill: #8D96A3; font-family: var(--font-sans); font-size: 11px; letter-spacing: .3px; }
+.dial-dot .halo { fill: var(--c); opacity: .28; transition: opacity .15s; }
+.dial-dot .core { fill: var(--c); stroke: rgba(255, 255, 255, .9); stroke-width: 2; transition: r .15s; }
+.dial-dot:hover .halo, .dial-dot:focus-visible .halo { opacity: .6; }
+.dial-dot:hover .core, .dial-dot:focus-visible .core { r: 9; }
+.dial-dot:focus-visible { outline: none; }
+.dial-side { min-width: 0; }
+.dial-title { font-size: var(--fs-xl); font-weight: 300; margin-top: 8px; color: #FFFFFF; }
+.dial-intro { color: #C6C6C6; margin-top: 12px; max-width: 46ch; }
+.dial-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 24px 0 0; }
+.dial-stats div { padding: 14px; border-radius: 12px; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .1); }
+.dial-stats dt { font-size: var(--fs-xs); color: #A8A8A8; letter-spacing: .32px; }
+.dial-stats dd { margin: 4px 0 0; font-size: 1.5rem; font-weight: 300; color: #FFFFFF; }
+.dial-stats dd small { font-size: var(--fs-sm); color: #A8A8A8; }
+.dial-legend { list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.dial-legend li {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-size: var(--fs-sm); color: #F4F4F4;
+  background: color-mix(in srgb, var(--c) 16%, rgba(255, 255, 255, .05)); border: 1px solid color-mix(in srgb, var(--c) 35%, transparent);
+}
+.dial-legend b { font-weight: 600; color: #FFFFFF; }
+.dial-key { width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); }
+
+@media (max-width: 900px) {
+  .dial-panel { grid-template-columns: 1fr; }
+  .dial { max-width: 380px; }
+}
+@media (max-width: 480px) {
+  .dial-stats { grid-template-columns: 1fr 1fr; }
+  .deadline { padding-left: 22px; }
+}
+
+/* ==========================================================================
+   v4.4 calm colour + easier dial
+   A muted, desaturated scheme palette; fainter aurora; lighter tints, no glows.
+   The dial gets bigger targets, month counts and a detail panel.
+   ========================================================================== */
+
+/* Muted scheme palette (light) */
+:root {
+  --s-ukets: #3F8A86; --s-euets: #5574B5; --s-fueleu: #7A6AB0; --s-corsia: #3F84A3;
+  --s-cbam: #AE7A45; --s-esos: #5B8C63; --s-secr: #78818B; --s-cca: #A66C86;
+}
+/* Muted scheme palette (dark theme and the dark hero) */
+:root[data-theme="dark"], .hero {
+  --s-ukets: #86C6C1; --s-euets: #97AEDD; --s-fueleu: #AFA3D8; --s-corsia: #8BBAD0;
+  --s-cbam: #D6AE84; --s-esos: #97C09C; --s-secr: #AEB5BD; --s-cca: #D2A5BA;
+}
+
+/* Fainter aurora */
+body {
+  background-image:
+    radial-gradient(40vw 38vw at 4% 6%, rgba(90, 160, 160, .09), transparent 62%),
+    radial-gradient(38vw 36vw at 98% 18%, rgba(100, 130, 200, .09), transparent 62%),
+    radial-gradient(44vw 40vw at 70% 70%, rgba(140, 125, 190, .06), transparent 62%);
+}
+:root[data-theme="dark"] body {
+  background-image:
+    radial-gradient(40vw 38vw at 4% 6%, rgba(90, 160, 160, .07), transparent 62%),
+    radial-gradient(38vw 36vw at 98% 18%, rgba(100, 130, 200, .08), transparent 62%),
+    radial-gradient(44vw 40vw at 70% 70%, rgba(140, 125, 190, .05), transparent 62%);
+}
+.hero {
+  background:
+    radial-gradient(36vw 30vw at 14% 16%, rgba(110, 150, 170, .14), transparent 64%),
+    radial-gradient(34vw 28vw at 90% 8%, rgba(120, 140, 190, .14), transparent 62%),
+    radial-gradient(60vw 34vw at 60% 108%, rgba(130, 125, 175, .12), transparent 62%),
+    #121418;
+}
+
+/* Lighter tints, no glows */
+.deadline {
+  background: linear-gradient(105deg, color-mix(in srgb, var(--c) 8%, transparent) 0%, transparent 42%), var(--glass);
+}
+.deadline:hover {
+  background: linear-gradient(105deg, color-mix(in srgb, var(--c) 11%, transparent) 0%, transparent 46%), var(--glass-hover);
+  box-shadow: var(--glass-shadow);
+}
+.deadline::before { box-shadow: none; width: 3px; }
+.date-block { background: color-mix(in srgb, var(--c) 6%, var(--glass-strong)); border-color: color-mix(in srgb, var(--c) 14%, var(--glass-border)); }
+.date-block .mon { color: color-mix(in srgb, var(--c) 75%, var(--text-secondary)); }
+.deadline .badge[data-scheme] { background: color-mix(in srgb, var(--c) 10%, var(--glass-strong)); color: color-mix(in srgb, var(--c) 60%, var(--text-primary)); box-shadow: none; }
+.scheme-card, .change-card, .horizon-item { background: linear-gradient(160deg, color-mix(in srgb, var(--c) 7%, transparent) 0%, transparent 50%), var(--glass); }
+.scheme-card:hover { background: linear-gradient(160deg, color-mix(in srgb, var(--c) 11%, transparent) 0%, transparent 55%), var(--glass-hover); }
+.scheme-card .abbr::before, .scheme-strip a::before { box-shadow: none; }
+.pack-cover { background: radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--c) 28%, transparent), transparent 60%), linear-gradient(140deg, rgba(22, 22, 22, .9), rgba(50, 54, 60, .8)); }
+
+/* ---------- Dial: easier to read and use ---------- */
+.dial-sector { fill: #FFFFFF; transition: fill-opacity .15s; }
+.dial-month-g { cursor: pointer; outline: none; }
+.dial-month-g:hover .dial-sector { fill-opacity: .14; }
+.dial-month-g.is-selected .dial-sector { fill-opacity: .2; stroke: rgba(255, 255, 255, .55); stroke-width: 1.5; }
+.dial-month-g:focus-visible .dial-sector { stroke: #FFFFFF; stroke-width: 2; }
+.dial-month-g.is-now .dial-sector { stroke: rgba(255, 255, 255, .3); }
+.dial-month { fill: #8D96A3; font-size: 12px; }
+.dial-month.has { fill: #E8EAED; font-weight: 600; }
+.dial-count { fill: #9AA6B4; font-weight: 400; }
+.dial-dot { cursor: pointer; }
+.dial-dot .hit { fill: transparent; }
+.dial-dot .halo { display: none; }
+.dial-dot .core { fill: var(--c); stroke: #121418; stroke-width: 2.5; transition: r .12s, opacity .15s; }
+.dial-dot:hover .core, .dial-dot:focus-visible .core, .dial-dot.is-active .core { r: 10; stroke: #FFFFFF; stroke-width: 2; }
+.dial.is-focused .dial-dot.is-dim .core { opacity: .18; }
+.dial-hand { stroke-width: 1.5; opacity: .75; }
+.dial-n { font-size: 50px; }
+.dial-caption { margin-top: 12px; text-align: center; font-size: var(--fs-sm); color: #A8A8A8; }
+.dial-caption strong { color: #E8EAED; font-weight: 600; }
+
+/* Detail panel beside the dial */
+.dial-intro { margin-top: 10px; font-size: var(--fs-sm); color: #A8B0BA; }
+.dial-detail {
+  margin-top: 20px; padding: 20px; border-radius: 14px; min-height: 190px;
+  background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12);
+}
+.dial-detail-label { display: block; font-size: var(--fs-xs); letter-spacing: .32px; color: #A8A8A8; margin-bottom: 10px; }
+.dial-detail-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.dial-detail-title { font-size: var(--fs-lg); font-weight: 400; color: #FFFFFF; margin-top: 12px; line-height: 1.35; }
+.dial-detail-date { margin-top: 6px; color: #C6C6C6; font-size: var(--fs-sm); }
+.dial-detail-who { margin-top: 10px; color: #A8B0BA; font-size: var(--fs-sm); }
+.dial-detail-link { display: inline-block; margin-top: 14px; color: #FFFFFF; font-size: var(--fs-sm); font-weight: 600; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, .4); }
+.dial-detail-link:hover { border-bottom-color: #FFFFFF; }
+.dial-detail .badge { background: color-mix(in srgb, var(--c) 18%, rgba(255, 255, 255, .06)); color: #F4F4F4; }
+.dial-detail .countdown { background: rgba(255, 255, 255, .1); color: #F4F4F4; }
+.dial-hint { color: #A8B0BA; font-size: var(--fs-sm); }
+.dial-month-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.dial-month-list a { display: grid; grid-template-columns: 32px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; text-decoration: none; color: #F4F4F4; border-left: 3px solid var(--c); background: rgba(255, 255, 255, .03); }
+.dial-month-list a:hover { background: rgba(255, 255, 255, .08); }
+.dml-day { font-size: 1.25rem; font-weight: 300; }
+.dml-text { font-size: var(--fs-sm); line-height: 1.35; min-width: 0; }
+.dml-scheme { display: block; font-size: var(--fs-xs); color: #A8B0BA; letter-spacing: .32px; }
+.dml-cd { font-size: var(--fs-xs); color: #A8A8A8; white-space: nowrap; }
+
+/* Legend: quiet chips, highlight on hover */
+.dial-legend { margin-top: 16px; }
+.dial-legend li { background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .1); cursor: default; color: #E8EAED; }
+.dial-legend li:hover, .dial-legend li:focus-visible { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .25); outline: none; }
+.dial-key { box-shadow: none; }
+.dial-stats { display: none; }
+
+@media (max-width: 900px) {
+  .dial-detail { min-height: 0; }
+}
+
 /* Preview notice (added by tools/prepare-github-pages.sh, not part of the real site) */
 .preview-bar { background: var(--verify-soft); color: var(--ink); border-bottom: 1px solid var(--line); font-size: var(--fs-sm); text-align: center; padding: 8px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px)); }
