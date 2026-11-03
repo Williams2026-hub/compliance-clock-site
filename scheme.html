@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="robots" content="noindex">
+  <title>Redirecting… | Compliance Clock</title>
+  <script src="assets/js/deadlines.js"></script>
+  <script src="assets/js/schemes.js"></script>
+  <script>
+    /* Old addresses (scheme.html?s=uk-ets) now forward to the static pages in schemes/. */
+    (function () {
+      var s = new URLSearchParams(location.search).get("s") || "";
+      var c = window.CC_SCHEME_CONTENT;
+      var key = Object.keys(c).find(function (k) { return c[k].slug === s || k === s; });
+      location.replace(key ? "schemes/" + c[key].slug + ".html" + location.hash : "index.html#schemes");
+    })();
+  </script>
+</head>
+<body>
+  <div class="preview-bar" role="note"><strong>Preview.</strong> This site is in development: dates are still being checked and nothing here is advice.</div>
+  <p><a href="index.html#schemes">Go to all schemes</a></p>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compliance Clock: style guide</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230F1B2D'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%237FD9B8' stroke-width='2.5'/%3E%3Cpath d='M16 10v6l4 3' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <style>
+    .sg h2 { font-size: var(--fs-xl); margin-bottom: 8px; }
+    .sg .lead { color: var(--muted); margin-bottom: 28px; max-width: 64ch; }
+    .sg section { padding-block: 48px; border-bottom: 1px solid var(--line); }
+    .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .swatch { border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; background: var(--surface); }
+    .swatch div { height: 72px; }
+    .swatch p { padding: 10px 12px; font-size: var(--fs-xs); line-height: 1.4; }
+    .swatch b { display: block; font-size: var(--fs-sm); }
+    .type-row { display: grid; grid-template-columns: 160px 1fr; gap: 24px; align-items: baseline; padding-block: 14px; border-top: 1px solid var(--line); }
+    .type-row small { color: var(--muted); font-size: var(--fs-xs); }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .stack { display: grid; gap: 16px; max-width: 760px; }
+    @media (max-width: 640px) { .type-row { grid-template-columns: 1fr; gap: 4px; } }
+  </style>
+</head>
+<body>
+  <div class="preview-bar" role="note"><strong>Preview.</strong> This site is in development: dates are still being checked and nothing here is advice.</div>
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="index.html">
+        <svg class="brand-mark" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M16 9v7l5 3.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 3.5v2.5M28.5 16H26M16 28.5V26M3.5 16H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".45"/></svg>
+        <span class="brand-name">Compliance Clock</span>
+      </a>
+      <span class="badge badge-plain" style="margin-left:auto">Style guide v0.1</span>
+      <button class="icon-btn" type="button" onclick="var r=document.documentElement;var d=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;r.dataset.theme=d?'light':'dark'" aria-label="Toggle theme">◐</button>
+    </div>
+  </header>
+
+  <main class="container sg">
+    <section>
+      <span class="eyebrow">Brand</span>
+      <h1 style="font-size:var(--fs-2xl);margin-top:12px">Calm, precise, <em style="color:var(--accent)">trustworthy.</em></h1>
+      <p class="lead" style="margin-top:16px">Compliance Clock should feel like a quality financial publication: generous white space, an editorial serif, one confident green accent and muted scheme colours. It should never look like "eco-cute" design. Everything here is driven by tokens in <code>assets/css/styles.css</code>.</p>
+      <div class="row">
+        <div class="clock-card" style="padding:24px;display:flex;gap:14px;align-items:center">
+          <svg width="56" height="56" viewBox="0 0 32 32" style="color:var(--accent)"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M16 9v7l5 3.5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 3.5v2.5M28.5 16H26M16 28.5V26M3.5 16H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".45"/></svg>
+          <div><div class="brand-name" style="font-size:1.8rem">Compliance Clock</div><div style="font-size:var(--fs-xs);color:var(--muted)">by <b style="color:var(--ink)">Triple Bottom Line</b></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Colour</h2>
+      <p class="lead">Core palette. Every colour has a dark-mode pair, so use the token, never the hex value.</p>
+      <div class="swatches" id="core"></div>
+      <h3 style="font-size:var(--fs-lg);margin:32px 0 12px">Scheme colours</h3>
+      <p class="lead">Used for the badge, left rule, timeline dot and card top border of each scheme. Always shown with a text label, never colour alone.</p>
+      <div class="swatches" id="schemes"></div>
+    </section>
+
+    <section>
+      <h2>Typography</h2>
+      <p class="lead">Newsreader (serif) for headings and big numbers. Inter for everything else. Dates and countdowns use tabular figures so they line up.</p>
+      <div class="type-row"><small>Display · Newsreader 400</small><div style="font-family:var(--font-serif);font-size:var(--fs-2xl);line-height:1.1">Every carbon deadline</div></div>
+      <div class="type-row"><small>H2 · Newsreader 500</small><div style="font-family:var(--font-serif);font-size:var(--fs-xl);font-weight:500">Upcoming deadlines</div></div>
+      <div class="type-row"><small>Card title · Newsreader 500</small><div style="font-family:var(--font-serif);font-size:1.3rem;font-weight:500">First UK ETS maritime emissions report</div></div>
+      <div class="type-row"><small>Body · Inter 400 / 16</small><p>Operators of ships of 5,000 GT+ on UK domestic voyages and at berth in UK ports.</p></div>
+      <div class="type-row"><small>Eyebrow · Inter 600 caps</small><span class="eyebrow">Next deadline</span></div>
+      <div class="type-row"><small>Big number · tabular</small><div class="num" style="font-family:var(--font-serif);font-size:5rem;line-height:1">148</div></div>
+    </section>
+
+    <section>
+      <h2>Buttons, chips &amp; badges</h2>
+      <p class="lead">Pill-shaped controls with touch targets of at least 36px (44px for primary actions).</p>
+      <div class="stack">
+        <div class="row"><a class="btn btn-primary" href="#">Get free alerts</a><a class="btn btn-secondary" href="#">Secondary</a><a class="btn btn-ghost" href="#">Ghost</a><a class="btn btn-secondary btn-sm" href="#">Small</a></div>
+        <div class="row">
+          <button class="chip" data-scheme="ukets" aria-pressed="true"><span class="dot"></span>UK ETS</button>
+          <button class="chip" data-scheme="fueleu" aria-pressed="false"><span class="dot"></span>FuelEU</button>
+          <button class="chip" aria-pressed="false">International</button>
+        </div>
+        <div class="row">
+          <span class="badge" data-scheme="ukets"><span class="dot"></span>UK ETS</span>
+          <span class="badge" data-scheme="euets"><span class="dot"></span>EU ETS</span>
+          <span class="badge" data-scheme="fueleu"><span class="dot"></span>FuelEU</span>
+          <span class="badge" data-scheme="corsia"><span class="dot"></span>CORSIA</span>
+          <span class="badge" data-scheme="cbam"><span class="dot"></span>CBAM</span>
+          <span class="badge" data-scheme="esos"><span class="dot"></span>ESOS</span>
+          <span class="badge" data-scheme="secr"><span class="dot"></span>SECR</span>
+          <span class="badge" data-scheme="cca"><span class="dot"></span>CCA</span>
+        </div>
+        <div class="row">
+          <span class="badge status-confirmed">Confirmed</span>
+          <span class="badge status-verify">Date to verify</span>
+          <span class="badge status-changed">Changed</span>
+          <span class="badge sponsored-label">Sponsored</span>
+          <span class="badge badge-plain">UK</span>
+          <span class="countdown num">in 148 days</span>
+          <span class="countdown num soon">in 12 days</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Deadline card</h2>
+      <p class="lead">The core component: date block, scheme and status badges, plain-English title, a "who it affects" line, description, tags, source and actions.</p>
+      <div class="stack">
+        <article class="deadline is-featured" data-scheme="ukets">
+          <div class="date-block"><div class="day num">31</div><div class="mon">Mar 27</div><div class="wd">Wed</div></div>
+          <div class="deadline-body">
+            <div class="deadline-badges"><span class="badge" data-scheme="ukets"><span class="dot"></span>UK ETS</span><span class="badge badge-plain">UK</span></div>
+            <h4 class="deadline-title">First UK ETS maritime emissions report</h4>
+            <p class="deadline-who"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/></g></svg><span>Operators of ships of 5,000 GT+ on UK domestic voyages</span></p>
+            <p class="deadline-desc">Verified report covering 1 July – 31 December 2026.</p>
+            <div class="deadline-meta"><span class="tags"><span class="tag">Maritime</span></span><span>Checked 3 Nov 2026 · <a href="#">Source</a></span></div>
+          </div>
+          <div class="deadline-side"><span class="countdown num">in 148 days</span></div>
+        </article>
+        <article class="deadline" data-scheme="cbam">
+          <div class="date-block"><div class="day num">30</div><div class="mon">Sep 27</div><div class="wd">Thu</div></div>
+          <div class="deadline-body">
+            <div class="deadline-badges"><span class="badge" data-scheme="cbam"><span class="dot"></span>CBAM</span><span class="badge badge-plain">EU</span><span class="badge status-verify">Date to verify</span></div>
+            <h4 class="deadline-title">First annual EU CBAM declaration</h4>
+            <p class="deadline-desc">With a "check" note when sources disagree:</p>
+            <div class="deadline-note verify"><b>Check:</b> An earlier proposal moved this to 31 August 2027.</div>
+          </div>
+          <div class="deadline-side"><span class="countdown num">in 331 days</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>Form controls</h2>
+      <div class="stack" style="max-width:420px">
+        <div class="field"><label for="a">Work email</label><input class="input" id="a" placeholder="you@company.com"></div>
+        <div class="field"><label for="b">Your sector</label><select class="select" id="b"><option>Maritime</option></select></div>
+        <div class="segmented"><button aria-pressed="true">List</button><button aria-pressed="false">Timeline</button></div>
+      </div>
+    </section>
+
+    <section style="border:0">
+      <h2>Principles</h2>
+      <ul class="lead" style="display:grid;gap:8px;padding-left:18px">
+        <li><b>Plain English first.</b> Spell out every acronym once per page.</li>
+        <li><b>Never colour alone.</b> Every coloured signal also has a text label.</li>
+        <li><b>Sources visible.</b> Every deadline shows when it was checked and links to the official source.</li>
+        <li><b>Sponsors look different.</b> Gold "Sponsored" label, separate from editorial content.</li>
+        <li><b>Accessible:</b> WCAG 2.2 AA contrast, full keyboard access, visible focus rings, reduced motion respected.</li>
+      </ul>
+    </section>
+  </main>
+
+  <script>
+    const core = [["--bg","Background"],["--surface","Surface"],["--surface-2","Surface 2"],["--ink","Ink"],["--ink-2","Ink 2"],["--muted","Muted"],["--line","Line"],["--navy","Navy"],["--accent","Carbon green"],["--accent-soft","Green soft"],["--urgent","Urgent"],["--changed","Changed"],["--verify","Verify"],["--sponsor","Sponsor"]];
+    const schemes = [["--s-ukets","UK ETS"],["--s-euets","EU ETS"],["--s-fueleu","FuelEU"],["--s-corsia","CORSIA"],["--s-cbam","CBAM"],["--s-esos","ESOS"],["--s-secr","SECR"],["--s-cca","CCA"]];
+    const paint = () => {
+      const cs = getComputedStyle(document.documentElement);
+      const sw = (list) => list.map(([v, n]) => `<div class="swatch"><div style="background:var(${v})"></div><p><b>${n}</b>${v} · ${cs.getPropertyValue(v).trim()}</p></div>`).join("");
+      document.getElementById("core").innerHTML = sw(core);
+      document.getElementById("schemes").innerHTML = sw(schemes);
+    };
+    paint();
+    new MutationObserver(paint).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  </script>
+</body>
+</html>
