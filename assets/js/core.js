@@ -154,7 +154,7 @@
   function wireChrome(revealSelector) {
     const root = document.documentElement;
     const btn = $("#themeToggle");
-    const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = () => root.dataset.theme === "dark"; /* light is the default; dark only by choice */
     const paint = () => { btn.innerHTML = `<svg><use href="#i-${isDark() ? "sun" : "moon"}"/></svg>`; btn.setAttribute("aria-label", isDark() ? "Switch to light theme" : "Switch to dark theme"); };
     try { const saved = localStorage.getItem("cc-theme"); if (saved) root.dataset.theme = saved; } catch (e) {}
     if (btn) {

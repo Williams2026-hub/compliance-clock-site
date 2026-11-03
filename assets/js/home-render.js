@@ -106,6 +106,37 @@
     }).join("");
   }
 
+  /* "Next 12 months" ribbon: one column per month, one coloured block per deadline */
+  function ribbon() {
+    const { SCHEMES, TODAY, esc, fmt, fmtLong, upcoming } = CC;
+    const months = [];
+    for (let i = 0; i < 12; i++) months.push(new Date(TODAY.getFullYear(), TODAY.getMonth() + i, 1));
+    const key = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const inRange = upcoming.filter((d) => months.some((m) => d.date.startsWith(key(m))));
+    const cols = months.map((m) => {
+      const k = key(m);
+      const items = inRange.filter((d) => d.date.startsWith(k));
+      const label = m.toLocaleString("en-GB", { month: "short" });
+      const year = m.getMonth() === 0 || m === months[0] ? `<small>${m.getFullYear()}</small>` : "";
+      return `<li class="rb-col${items.length ? "" : " is-empty"}">
+        <div class="rb-stack">${items.map((d) =>
+          `<a class="rb" href="#${d.id}" data-scheme="${d.scheme}" title="${esc(SCHEMES[d.scheme].abbr)}: ${esc(d.title)} (${esc(fmtLong(d.date))})"><span class="sr-only">${esc(SCHEMES[d.scheme].abbr)}: ${esc(d.title)}, ${esc(fmtLong(d.date))}</span></a>`).join("")}</div>
+        <span class="rb-count num">${items.length || ""}</span>
+        <span class="rb-month">${label}${year}</span>
+      </li>`;
+    }).join("");
+    const used = Object.keys(SCHEMES).filter((k) => inRange.some((d) => d.scheme === k));
+    return `
+      <div class="ribbon" aria-label="Deadlines over the next 12 months">
+        <div class="ribbon-head">
+          <span class="eyebrow">Next 12 months</span>
+          <span class="ribbon-total"><strong class="num">${inRange.length}</strong> deadlines from ${fmt(key(months[0]) + "-01", { month: "long" })} to ${fmt(key(months[11]) + "-01", { month: "long", year: "numeric" })}</span>
+        </div>
+        <ol class="rb-cols">${cols}</ol>
+        <ul class="rb-legend">${used.map((k) => `<li data-scheme="${k}"><span class="rb-key"></span>${esc(SCHEMES[k].abbr)}</li>`).join("")}</ul>
+      </div>`;
+  }
+
   /* Everything the build writes into index.html, keyed by marker name */
   function all() {
     const st = stats();
@@ -116,6 +147,7 @@
       statSchemes: st.schemes,
       statVerified: st.verified,
       schemeStrip: schemeStrip(),
+      ribbon: ribbon(),
       resultCount: resultCount(CC.upcoming.length, false),
       listView: list(CC.upcoming),
       horizonGrid: horizon(CC.horizon),
@@ -124,5 +156,5 @@
     };
   }
 
-  CC.home = { heroNext, nextList, stats, schemeStrip, resultCount, list, horizon, changes, schemes, all };
+  CC.home = { heroNext, nextList, stats, schemeStrip, ribbon, resultCount, list, horizon, changes, schemes, all };
 })();

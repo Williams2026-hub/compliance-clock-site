@@ -61,6 +61,7 @@
     $("#statSchemes").textContent = st.schemes;
     $("#statVerified").textContent = st.verified;
     $("#schemeStrip").innerHTML = H.schemeStrip();
+    $("#ribbon").innerHTML = H.ribbon();
   }
 
   /* ---------- Filters UI ---------- */
