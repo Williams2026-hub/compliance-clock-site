@@ -61,7 +61,56 @@
     $("#statSchemes").textContent = st.schemes;
     $("#statVerified").textContent = st.verified;
     $("#schemeStrip").innerHTML = H.schemeStrip();
-    $("#ribbon").innerHTML = H.ribbon();
+    $("#ribbon").innerHTML = H.dial();
+  }
+
+  /* ---------- Compliance clock dial ----------
+     Hover/focus/tap a dot → its details in the side panel (a tap doesn't jump away).
+     Select a month → that month's deadlines. Hover a legend chip → highlight that scheme. */
+  function wireDial() {
+    const root = $("#ribbon");
+    if (!root) return;
+    const detail = () => $("#dialDetail");
+    const svg = () => $(".dial", root);
+    const clearActive = () => $$(".dial-dot.is-active, .dial-month-g.is-selected", root).forEach((el) => el.classList.remove("is-active", "is-selected"));
+    const showDot = (dot) => {
+      const d = byId[dot.dataset.id];
+      if (!d || !detail()) return;
+      clearActive();
+      dot.classList.add("is-active");
+      detail().innerHTML = H.dialDetail(d);
+    };
+    const showMonth = (g) => {
+      if (!detail()) return;
+      clearActive();
+      g.classList.add("is-selected");
+      detail().innerHTML = H.dialMonth(g.dataset.month);
+    };
+    const highlight = (scheme) => {
+      const s = svg(); if (!s) return;
+      s.classList.toggle("is-focused", !!scheme);
+      $$(".dial-dot", s).forEach((dot) => dot.classList.toggle("is-dim", !!scheme && dot.dataset.scheme !== scheme));
+    };
+
+    root.addEventListener("mouseover", (e) => {
+      const dot = e.target.closest(".dial-dot"); if (dot) return showDot(dot);
+      const chip = e.target.closest(".dial-legend li"); if (chip) highlight(chip.dataset.scheme);
+    });
+    root.addEventListener("mouseout", (e) => { if (e.target.closest(".dial-legend li")) highlight(null); });
+    root.addEventListener("focusin", (e) => {
+      const dot = e.target.closest(".dial-dot"); if (dot) return showDot(dot);
+      const chip = e.target.closest(".dial-legend li"); if (chip) highlight(chip.dataset.scheme);
+    });
+    root.addEventListener("focusout", (e) => { if (e.target.closest(".dial-legend li")) highlight(null); });
+    root.addEventListener("click", (e) => {
+      const dot = e.target.closest(".dial-dot");
+      if (dot) { e.preventDefault(); showDot(dot); return; }
+      const g = e.target.closest(".dial-month-g"); if (g) showMonth(g);
+    });
+    root.addEventListener("keydown", (e) => {
+      const g = e.target.closest(".dial-month-g");
+      if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); showMonth(g); }
+    });
   }
 
   /* ---------- Filters UI ---------- */
@@ -218,6 +267,7 @@
   $("#schemesGrid").innerHTML = H.schemes();
   window.CC.wireDeadlineActions($("#listView"));
   wireTimeline();
+  wireDial();
   window.CC.wireSignup($("#signupForm"));
   window.CC.wireChrome(".scheme-card, .change-card, .pack, .partner-card, .alert-band");
   update();
