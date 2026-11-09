@@ -23,8 +23,9 @@
     toast(`Calendar file downloaded (${items.length} deadlines)`);
   });
 
-  if (location.hash.length > 1) {
-    const el = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  const id = window.CC.hashId();
+  if (id) {
+    const el = document.getElementById(id);
     if (el) setTimeout(() => el.scrollIntoView({ block: "center" }), 50);
   }
 })();

@@ -10,7 +10,10 @@
   if (!form) return;
   const p = new URLSearchParams(location.search);
   const topic = $("#topic");
-  if (p.get("topic") && topic.querySelector(`option[value="${p.get("topic")}"]`)) topic.value = p.get("topic");
+  /* Compare with the real options rather than building a CSS selector from the link,
+     so an odd ?topic= value can't throw and stop the rest of this script. */
+  const wanted = p.get("topic");
+  if (wanted && Array.from(topic.options).some((o) => o.value === wanted)) topic.value = wanted;
   const dl = p.get("deadline");
   if (dl && window.CC.byId[dl]) {
     const d = window.CC.byId[dl];

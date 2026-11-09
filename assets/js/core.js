@@ -12,6 +12,8 @@
   const $ = (sel, el = document) => el.querySelector(sel);
   const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  /* The id in the address bar after "#", or "" if it's missing or malformed (e.g. "#%E0") */
+  const hashId = () => { try { return decodeURIComponent(location.hash.slice(1)); } catch (e) { return ""; } };
 
   /* ---------- Dates ---------- */
   const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -52,36 +54,42 @@
     : d.sectors.map((s) => `<span class="tag">${esc(SECTORS[s])}</span>`).join("");
   const sizeTag = (d) => d.sizes.includes("all") ? "" : `<span class="tag">${d.sizes.map((s) => esc(SIZES[s])).join(", ")} companies</span>`;
 
-  function deadlineCard(d) {
+  /* One deadline as a compact row: date, title, who it affects and time left at a glance.
+     Opening the row shows the detail, source and calendar/copy-link buttons. */
+  function deadlineRow(d) {
     const dt = parse(d.date);
     const cd = countdown(d.date, d.precision);
     const approx = d.precision === "month";
-    const dateBlock = approx
-      ? `<div class="date-block approx"><div class="day">${fmt(d.date, { month: "short" })}</div><div class="mon">${dt.getFullYear()}</div><div class="wd">Day TBC</div></div>`
-      : `<div class="date-block"><div class="day num">${dt.getDate()}</div><div class="mon">${fmt(d.date, { month: "short" })} ${String(dt.getFullYear()).slice(2)}</div><div class="wd">${fmt(d.date, { weekday: "short" })}</div></div>`;
+    const date = approx
+      ? `<span class="dl-date approx"><span class="day">${fmt(d.date, { month: "short" })}</span><span class="mon">Day TBC</span></span>`
+      : `<span class="dl-date"><span class="day num">${dt.getDate()}</span><span class="mon">${fmt(d.date, { month: "short" })} · ${fmt(d.date, { weekday: "short" })}</span></span>`;
     const note = d.note ? `<div class="deadline-note ${d.status === "verify" ? "verify" : ""}"><b>${d.status === "verify" ? "Check:" : "Note:"}</b> ${esc(d.note)}</div>` : "";
     return `
-      <article class="deadline${d.featured ? " is-featured" : ""}" id="${d.id}" data-scheme="${d.scheme}">
-        ${dateBlock}
-        <div class="deadline-body">
-          <div class="deadline-badges">${schemeBadge(d.scheme)}<span class="badge badge-plain">${esc(d.region)}</span>${d.status !== "confirmed" ? statusBadge(d.status) : ""}</div>
-          <h4 class="deadline-title">${esc(d.title)}</h4>
-          <p class="deadline-who"><svg aria-hidden="true"><use href="#i-users"/></svg><span><span class="sr-only">Who it affects: </span>${esc(d.who)}</span></p>
+      <details class="dl-row" id="${d.id}" data-scheme="${d.scheme}">
+        <summary>
+          ${date}
+          <span class="dl-main">
+            <span class="dl-title">${esc(d.title)}</span>
+            <span class="dl-who"><span class="dl-scheme">${esc(SCHEMES[d.scheme].abbr)}</span><span class="sr-only">Who it affects: </span>${esc(d.who)}</span>
+          </span>
+          <span class="dl-side">${d.status !== "confirmed" ? statusBadge(d.status) : ""}<span class="countdown num ${cd.cls}">${cd.text}</span></span>
+          <span class="dl-chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="dl-more">
           <p class="deadline-desc">${esc(d.desc)}</p>
           ${note}
           <div class="deadline-meta">
-            <span class="tags">${sectorTags(d)}${sizeTag(d)}</span>
-            <span>Checked ${fmtShort(d.verified)} · <a href="${esc(d.source)}" target="_blank" rel="noopener">Source</a></span>
+            <span class="tags">${schemeBadge(d.scheme)}<span class="badge badge-plain">${esc(d.region)}</span>${sectorTags(d)}${sizeTag(d)}</span>
+          </div>
+          <div class="dl-foot">
+            <span class="dl-checked">Checked ${fmtShort(d.verified)} · <a href="${esc(d.source)}" target="_blank" rel="noopener">Official source ↗</a></span>
+            <span class="deadline-actions">
+              <button class="btn btn-secondary btn-sm" type="button" data-ics="${d.id}" aria-label="Add “${esc(d.title)}” to calendar"><svg width="16" height="16" aria-hidden="true"><use href="#i-cal"/></svg> Add to calendar</button>
+              <button class="btn btn-ghost btn-sm" type="button" data-share="${d.id}" aria-label="Copy link to this deadline"><svg width="16" height="16" aria-hidden="true"><use href="#i-share"/></svg> Copy link</button>
+            </span>
           </div>
         </div>
-        <div class="deadline-side">
-          <span class="countdown num ${cd.cls}">${cd.text}</span>
-          <div class="deadline-actions">
-            <button class="icon-btn" type="button" data-ics="${d.id}" aria-label="Add “${esc(d.title)}” to calendar" title="Add to calendar"><svg><use href="#i-cal"/></svg></button>
-            <button class="icon-btn" type="button" data-share="${d.id}" aria-label="Copy link to this deadline" title="Copy link"><svg><use href="#i-share"/></svg></button>
-          </div>
-        </div>
-      </article>`;
+      </details>`;
   }
 
   /* ---------- Calendar (.ics) ---------- */
@@ -120,7 +128,17 @@
     clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2400);
   }
 
-  /* Calendar and copy-link buttons on deadline cards inside `container` */
+
+  /* Open a deadline row (by id) and bring it into view. Returns false if it isn't on the page. */
+  function openDeadline(id, smooth = true) {
+    const el = document.getElementById(id);
+    if (!el || el.tagName !== "DETAILS") return false;
+    el.open = true;
+    el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "center" });
+    return true;
+  }
+
+  /* Calendar and copy-link buttons on deadline rows inside `container`; #id links open their row */
   function wireDeadlineActions(container) {
     container.addEventListener("click", async (e) => {
       const cal = e.target.closest("[data-ics]");
@@ -137,6 +155,9 @@
         catch (err) { history.replaceState(null, "", "#" + sh.dataset.share); toast("Link is in the address bar"); }
       }
     });
+    const fromHash = (smooth) => { const id = hashId(); return id && openDeadline(id, smooth); };
+    window.addEventListener("hashchange", () => fromHash(true));
+    setTimeout(() => fromHash(false), 50);
   }
 
   /* ---------- Signup (placeholder until the email provider is connected) ---------- */
@@ -186,9 +207,9 @@
 
   window.CC = {
     SCHEMES, SECTORS, SIZES, ALL, DAY, TODAY,
-    $, $$, esc, parse, daysUntil, fmt, fmtLong, fmtShort,
+    $, $$, esc, hashId, parse, daysUntil, fmt, fmtLong, fmtShort,
     isDated, dated, upcoming, horizon, byId, countdown, STATUS_LABEL,
-    schemeUrl, schemeBadge, statusBadge, deadlineCard,
+    schemeUrl, schemeBadge, statusBadge, deadlineRow, openDeadline,
     downloadIcs, toast, wireDeadlineActions, wireSignup, wireChrome, selectOptions
   };
 })();
