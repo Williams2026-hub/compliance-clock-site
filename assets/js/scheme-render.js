@@ -11,7 +11,7 @@
              schemeBase: prefix for links to other scheme pages ("" from site/schemes/) } */
   function renderScheme(key, opts) {
     const { SCHEMES, esc, fmt, fmtLong, daysUntil, upcoming, horizon, countdown,
-      schemeUrl, schemeBadge, statusBadge, deadlineCard } = window.CC;
+      schemeUrl, schemeBadge, statusBadge, deadlineRow } = window.CC;
     const root = opts.root;
     const href = (k) => schemeUrl(k, opts.schemeBase);
     const s = SCHEMES[key];
@@ -122,7 +122,7 @@
           <section class="sp-section" id="deadlines">
             <span class="eyebrow">Step 3</span>
             <h2>Upcoming ${esc(s.abbr)} deadlines <small class="num">${items.length}</small></h2>
-            <div class="deadline-list" id="schemeDeadlines">${items.length ? items.map(deadlineCard).join("") : `<p class="muted-note">No fixed-date deadlines. See below.</p>`}</div>
+            <div class="deadline-list" id="schemeDeadlines">${items.length ? items.map(deadlineRow).join("") : `<p class="muted-note">No fixed-date deadlines. See below.</p>`}</div>
             ${horizonHtml}
           </section>
 

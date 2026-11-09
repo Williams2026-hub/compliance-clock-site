@@ -1,16 +1,15 @@
 /* Compliance Clock — home page behaviour
-   Filters, views and buttons for the tracker. The HTML comes from
+   Filters and buttons for the tracker and the year-at-a-glance grid. The HTML comes from
    home-render.js (also used by tools/build.js to pre-render index.html). */
 (function () {
   "use strict";
 
-  const { SCHEMES, SECTORS, SIZES, TODAY, $, $$, esc, parse, daysUntil, fmtLong,
-    upcoming, horizon, byId, countdown } = window.CC;
+  const { SCHEMES, SECTORS, SIZES, $, $$, esc, daysUntil, upcoming, horizon, byId } = window.CC;
   const H = window.CC.home;
   const REGIONS = ["UK", "EU", "Global"];
 
   /* ---------- State (mirrored in the URL so filtered views can be shared) ---------- */
-  const state = { schemes: new Set(), regions: new Set(), sector: "", size: "", window: "all", q: "", view: "list" };
+  const state = { schemes: new Set(), regions: new Set(), sector: "", size: "", window: "all", q: "" };
 
   function readURL() {
     const p = new URLSearchParams(location.search);
@@ -20,7 +19,6 @@
     if (SIZES[p.get("size")]) state.size = p.get("size");
     if (["30", "90", "365"].includes(p.get("window"))) state.window = p.get("window");
     state.q = p.get("q") || "";
-    if (p.get("view") === "timeline") state.view = "timeline";
   }
 
   function writeURL() {
@@ -31,7 +29,6 @@
     if (state.size) p.set("size", state.size);
     if (state.window !== "all") p.set("window", state.window);
     if (state.q) p.set("q", state.q);
-    if (state.view !== "list") p.set("view", state.view);
     const qs = p.toString();
     try { history.replaceState(null, "", (qs ? "?" + qs : location.pathname) + location.hash); } catch (e) { /* file:// in some browsers */ }
   }
@@ -61,64 +58,78 @@
     $("#statSchemes").textContent = st.schemes;
     $("#statVerified").textContent = st.verified;
     $("#schemeStrip").innerHTML = H.schemeStrip();
-    $("#ribbon").innerHTML = H.dial();
+    $("#ribbon").innerHTML = H.glance();
   }
 
-  /* ---------- Compliance clock dial ----------
-     Hover/focus/tap a dot → its details in the side panel (a tap doesn't jump away).
-     Select a month → that month's deadlines. Hover a legend chip → highlight that scheme. */
-  function wireDial() {
+  /* ---------- Year at a glance ----------
+     Hover/focus/tap a pill → its details in the side panel (a tap doesn't jump away).
+     Select a month → that month's deadlines. Select a scheme → filter the tracker to it.
+     "Full details" links open the deadline's row in the tracker. */
+  function wireGlance() {
     const root = $("#ribbon");
     if (!root) return;
-    const detail = () => $("#dialDetail");
-    const svg = () => $(".dial", root);
-    const clearActive = () => $$(".dial-dot.is-active, .dial-month-g.is-selected", root).forEach((el) => el.classList.remove("is-active", "is-selected"));
-    const showDot = (dot) => {
-      const d = byId[dot.dataset.id];
+    const detail = () => $("#glanceDetail");
+    const clearActive = () => $$(".gl-pill.is-active, .gl-month.is-selected", root).forEach((el) => el.classList.remove("is-active", "is-selected"));
+    const showPill = (pill) => {
+      const d = byId[pill.dataset.id];
       if (!d || !detail()) return;
       clearActive();
-      dot.classList.add("is-active");
-      detail().innerHTML = H.dialDetail(d);
+      pill.classList.add("is-active");
+      detail().innerHTML = H.glanceDetail(d);
     };
-    const showMonth = (g) => {
+    const showMonth = (btn) => {
       if (!detail()) return;
       clearActive();
-      g.classList.add("is-selected");
-      detail().innerHTML = H.dialMonth(g.dataset.month);
-    };
-    const highlight = (scheme) => {
-      const s = svg(); if (!s) return;
-      s.classList.toggle("is-focused", !!scheme);
-      $$(".dial-dot", s).forEach((dot) => dot.classList.toggle("is-dim", !!scheme && dot.dataset.scheme !== scheme));
+      btn.classList.add("is-selected");
+      detail().innerHTML = H.glanceMonth(btn.dataset.month);
     };
 
-    root.addEventListener("mouseover", (e) => {
-      const dot = e.target.closest(".dial-dot"); if (dot) return showDot(dot);
-      const chip = e.target.closest(".dial-legend li"); if (chip) highlight(chip.dataset.scheme);
-    });
-    root.addEventListener("mouseout", (e) => { if (e.target.closest(".dial-legend li")) highlight(null); });
-    root.addEventListener("focusin", (e) => {
-      const dot = e.target.closest(".dial-dot"); if (dot) return showDot(dot);
-      const chip = e.target.closest(".dial-legend li"); if (chip) highlight(chip.dataset.scheme);
-    });
-    root.addEventListener("focusout", (e) => { if (e.target.closest(".dial-legend li")) highlight(null); });
+    root.addEventListener("mouseover", (e) => { const p = e.target.closest(".gl-pill"); if (p) showPill(p); });
+    root.addEventListener("focusin", (e) => { const p = e.target.closest(".gl-pill"); if (p) showPill(p); });
     root.addEventListener("click", (e) => {
-      const dot = e.target.closest(".dial-dot");
-      if (dot) { e.preventDefault(); showDot(dot); return; }
-      const g = e.target.closest(".dial-month-g"); if (g) showMonth(g);
-    });
-    root.addEventListener("keydown", (e) => {
-      const g = e.target.closest(".dial-month-g");
-      if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); showMonth(g); }
+      const pill = e.target.closest(".gl-pill");
+      if (pill) { e.preventDefault(); showPill(pill); return; }
+      const month = e.target.closest(".gl-month"); if (month) return showMonth(month);
+      const scheme = e.target.closest("[data-filter-to]");
+      if (scheme) {
+        state.schemes = new Set([scheme.dataset.filterTo]);
+        update();
+        $("#tracker").scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+      const open = e.target.closest("[data-open]");
+      if (open) { e.preventDefault(); showInList(open.dataset.open); }
     });
   }
 
-  /* ---------- Filters UI ---------- */
+  /* Show a deadline's row in the tracker, clearing filters that hide it */
+  function showInList(id) {
+    if (!document.getElementById(id)) {
+      clearFilters();
+      update();
+    }
+    history.replaceState(null, "", location.pathname + location.search + "#" + id);
+    window.CC.openDeadline(id);
+  }
+
+  /* ---------- Filters UI ----------
+     A bar of labelled controls above the list (a bottom sheet on phones), a scheme dropdown
+     with tick boxes, and removable tags for whatever is active. */
+  const regionName = (r) => r === "Global" ? "International" : r;
+  const WINDOW_LABEL = { 30: "Next 30 days", 90: "Next 90 days", 365: "Next 12 months" };
+
+  function clearFilters() {
+    state.schemes.clear(); state.regions.clear(); state.sector = ""; state.size = ""; state.window = "all"; state.q = "";
+  }
+
   function buildFilters() {
     $("#schemeChips").innerHTML = Object.entries(SCHEMES).map(([k, s]) =>
-      `<button type="button" class="chip" data-scheme="${k}" data-filter-scheme="${k}" aria-pressed="false"><span class="dot"></span>${esc(s.abbr)}</button>`).join("");
+      `<button type="button" class="dd-option" data-scheme="${k}" data-filter-scheme="${k}" aria-pressed="false">
+        <span class="dd-check" aria-hidden="true"></span><span class="dd-key" aria-hidden="true"></span>
+        <span class="dd-text"><b>${esc(s.abbr)}</b><small>${esc(s.name)}</small></span>
+      </button>`).join("");
     $("#regionChips").innerHTML = REGIONS.map((r) =>
-      `<button type="button" class="chip" data-filter-region="${r}" aria-pressed="false">${r === "Global" ? "International" : r}</button>`).join("");
+      `<button type="button" data-filter-region="${r}" aria-pressed="false">${regionName(r)}</button>`).join("");
     window.CC.selectOptions($("#sectorSelect"), SECTORS);
     window.CC.selectOptions($("#sizeSelect"), SIZES);
     window.CC.selectOptions($("#signupSector"), SECTORS);
@@ -141,11 +152,27 @@
     $("#windowSelect").addEventListener("change", (e) => { state.window = e.target.value; update(); });
     let t;
     $("#searchInput").addEventListener("input", (e) => { clearTimeout(t); t = setTimeout(() => { state.q = e.target.value.trim(); update(); }, 150); });
-    $("#clearFilters").addEventListener("click", () => {
-      state.schemes.clear(); state.regions.clear(); state.sector = ""; state.size = ""; state.window = "all"; state.q = "";
-      $("#searchInput").value = ""; update();
+    $("#clearFilters").addEventListener("click", () => { clearFilters(); update(); });
+
+    // Active filter tags: × removes that one filter
+    $("#activeFilters").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-remove]"); if (!b) return;
+      const [kind, v] = b.dataset.remove.split(":");
+      if (kind === "scheme") state.schemes.delete(v);
+      if (kind === "region") state.regions.delete(v);
+      if (kind === "sector") state.sector = "";
+      if (kind === "size") state.size = "";
+      if (kind === "window") state.window = "all";
+      if (kind === "q") { state.q = ""; $("#searchInput").value = ""; }
+      update();
     });
-    $$(".segmented [data-view]").forEach((b) => b.addEventListener("click", () => { state.view = b.dataset.view; update(); }));
+
+    // Scheme dropdown
+    const dd = $("#schemeDropdown"), toggle = $("#schemeToggle");
+    const setOpen = (open) => { dd.classList.toggle("is-open", open); toggle.setAttribute("aria-expanded", open); };
+    toggle.addEventListener("click", () => setOpen(!dd.classList.contains("is-open")));
+    document.addEventListener("click", (e) => { if (!dd.contains(e.target)) setOpen(false); });
+    dd.addEventListener("keydown", (e) => { if (e.key === "Escape") { setOpen(false); toggle.focus(); } });
 
     // Mobile bottom sheet
     const open = () => { $("#filters").classList.add("open"); $("#scrim").classList.add("show"); };
@@ -164,80 +191,31 @@
     $("#sizeSelect").value = state.size;
     $("#windowSelect").value = state.window;
     if ($("#searchInput").value.trim() !== state.q) $("#searchInput").value = state.q;
-    $$(".segmented [data-view]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.view === state.view));
+    const picked = [...state.schemes];
+    $("#schemeToggleLabel").textContent = !picked.length ? "All schemes" : picked.length === 1 ? SCHEMES[picked[0]].abbr : `${picked.length} schemes`;
+    $("#schemeToggle").classList.toggle("is-set", picked.length > 0);
+    ["sectorSelect", "sizeSelect"].forEach((id) => $("#" + id).classList.toggle("is-set", !!$("#" + id).value));
+    $("#windowSelect").classList.toggle("is-set", state.window !== "all");
     const n = activeFilterCount();
     $("#filterBtnLabel").textContent = n ? `Filters (${n})` : "Filters";
+
+    const tag = (remove, text, scheme) =>
+      `<button type="button" class="fb-tag" data-remove="${remove}"${scheme ? ` data-scheme="${scheme}"` : ""} aria-label="Remove filter: ${esc(text)}">${scheme ? `<span class="dd-key"></span>` : ""}${esc(text)}<span class="fb-x" aria-hidden="true"></span></button>`;
+    const tags = [
+      state.sector && tag("sector", SECTORS[state.sector]),
+      state.size && tag("size", SIZES[state.size] + " companies"),
+      ...picked.map((k) => tag("scheme:" + k, SCHEMES[k].abbr, k)),
+      ...[...state.regions].map((r) => tag("region:" + r, regionName(r))),
+      state.window !== "all" && tag("window", WINDOW_LABEL[state.window]),
+      state.q && tag("q", `“${state.q}”`)
+    ].filter(Boolean);
+    $("#activeFilters").innerHTML = tags.join("");
+    $("#clearFilters").hidden = !tags.length;
   }
 
   /* ---------- List view ---------- */
   function renderList(items) {
     $("#listView").innerHTML = H.list(items);
-  }
-
-  /* ---------- Timeline view ---------- */
-  function renderTimeline(items) {
-    const view = $("#timelineView");
-    if (!items.length) { view.innerHTML = `<div class="empty"><h3>No deadlines match</h3><p>Try removing a filter.</p></div>`; return; }
-    const start = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
-    const last = parse(items[items.length - 1].date);
-    const end = new Date(Math.max(last.getFullYear(), TODAY.getFullYear() + 1), 11, 31);
-    const months = [];
-    for (let d = new Date(start); d <= end; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) months.push(new Date(d));
-    const span = end - start;
-    const pos = (date) => ((date - start) / span) * 100;
-    const cols = `repeat(${months.length}, 1fr)`;
-    const schemesUsed = Object.keys(SCHEMES).filter((k) => items.some((d) => d.scheme === k));
-    const todayLeft = pos(TODAY);
-
-    const head = `
-      <div class="tl-row tl-head">
-        <div class="tl-label">Scheme</div>
-        <div class="tl-track" style="grid-template-columns:${cols}">
-          ${months.map((m) => `<div class="tl-month${m.getMonth() === 0 ? " year" : ""}">${m.getMonth() === 0 || m === months[0] ? m.toLocaleString("en-GB", { month: "short", year: "numeric" }) : m.toLocaleString("en-GB", { month: "short" })}</div>`).join("")}
-        </div>
-      </div>`;
-    const rows = schemesUsed.map((k) => `
-      <div class="tl-row" data-scheme="${k}">
-        <div class="tl-label"><span class="dot"></span>${esc(SCHEMES[k].abbr)}</div>
-        <div class="tl-track">
-          <div class="tl-gridlines" style="grid-template-columns:${cols}">${months.map(() => "<span></span>").join("")}</div>
-          <div class="tl-today" style="left:${todayLeft}%"></div>
-          ${items.filter((d) => d.scheme === k).map((d) =>
-            `<button type="button" class="tl-marker" style="left:${pos(parse(d.date))}%" data-goto="${d.id}" aria-label="${esc(fmtLong(d.date))}: ${esc(d.title)}"></button>`).join("")}
-        </div>
-      </div>`).join("");
-
-    view.innerHTML = `
-      <div class="timeline">
-        <div class="timeline-scroll"><div class="timeline-inner">${head}${rows}</div></div>
-        <div class="timeline-legend"><span>Hover or tap a dot for details. Select it to jump to the deadline in the list.</span></div>
-      </div>`;
-  }
-
-  function wireTimeline() {
-    const tip = $("#tlTooltip");
-    const show = (el) => {
-      const d = byId[el.dataset.goto];
-      tip.innerHTML = `<b>${esc(d.title)}</b>${esc(SCHEMES[d.scheme].abbr)} · ${esc(fmtLong(d.date))} · ${countdown(d.date, d.precision).text}<br>${esc(d.who)}`;
-      const r = el.getBoundingClientRect();
-      tip.classList.add("show");
-      const w = tip.offsetWidth;
-      tip.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + "px";
-      tip.style.top = (r.top - tip.offsetHeight - 10 < 8 ? r.bottom + 10 : r.top - tip.offsetHeight - 10) + "px";
-    };
-    const hide = () => tip.classList.remove("show");
-    const view = $("#timelineView");
-    view.addEventListener("mouseover", (e) => { const m = e.target.closest(".tl-marker"); if (m) show(m); });
-    view.addEventListener("mouseout", (e) => { if (e.target.closest(".tl-marker")) hide(); });
-    view.addEventListener("focusin", (e) => { const m = e.target.closest(".tl-marker"); if (m) show(m); });
-    view.addEventListener("focusout", hide);
-    view.addEventListener("click", (e) => {
-      const m = e.target.closest(".tl-marker"); if (!m) return;
-      hide(); state.view = "list"; update();
-      const el = document.getElementById(m.dataset.goto);
-      if (el) { location.hash = m.dataset.goto; el.scrollIntoView({ behavior: "smooth", block: "center" }); }
-    });
-    window.addEventListener("scroll", hide, { passive: true });
   }
 
   /* ---------- Horizon ---------- */
@@ -254,9 +232,7 @@
     const items = upcoming.filter((d) => matches(d));
     const n = activeFilterCount() + (state.q ? 1 : 0);
     $("#resultCount").innerHTML = H.resultCount(items.length, n > 0);
-    $("#listView").hidden = state.view !== "list";
-    $("#timelineView").hidden = state.view !== "timeline";
-    if (state.view === "list") renderList(items); else renderTimeline(items);
+    renderList(items);
     renderHorizon();
   }
 
@@ -266,15 +242,8 @@
   $("#changesGrid").innerHTML = H.changes();
   $("#schemesGrid").innerHTML = H.schemes();
   window.CC.wireDeadlineActions($("#listView"));
-  wireTimeline();
-  wireDial();
+  wireGlance();
   window.CC.wireSignup($("#signupForm"));
   window.CC.wireChrome(".scheme-card, .change-card, .pack, .partner-card, .alert-band");
   update();
-
-  // Deep link to a deadline (#id) after first render
-  if (location.hash.length > 1) {
-    const el = document.getElementById(decodeURIComponent(location.hash.slice(1)));
-    if (el) setTimeout(() => el.scrollIntoView({ block: "center" }), 50);
-  }
 })();

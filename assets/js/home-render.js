@@ -53,14 +53,14 @@
   }
 
   function list(items) {
-    const { fmt, deadlineCard } = CC;
+    const { fmt, deadlineRow } = CC;
     if (!items.length) return `<div class="empty"><h3>No deadlines match</h3><p>Try removing a filter or widening the time window.</p></div>`;
     const groups = new Map();
     items.forEach((d) => { const k = d.date.slice(0, 7); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(d); });
     return [...groups].map(([k, g]) => `
       <section class="month-group" aria-label="${fmt(k + "-01", { month: "long", year: "numeric" })}">
         <h3 class="month-label">${fmt(k + "-01", { month: "long", year: "numeric" })}<small>${g.length} ${g.length === 1 ? "deadline" : "deadlines"}</small></h3>
-        <div class="deadline-list">${g.map(deadlineCard).join("")}</div>
+        <div class="deadline-list">${g.map(deadlineRow).join("")}</div>
       </section>`).join("");
   }
 
@@ -106,150 +106,108 @@
     }).join("");
   }
 
-  /* "Next 12 months" ribbon: one column per month, one coloured block per deadline */
-  function ribbon() {
-    const { SCHEMES, TODAY, esc, fmt, fmtLong, upcoming } = CC;
-    const months = [];
-    for (let i = 0; i < 12; i++) months.push(new Date(TODAY.getFullYear(), TODAY.getMonth() + i, 1));
-    const key = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const inRange = upcoming.filter((d) => months.some((m) => d.date.startsWith(key(m))));
-    const cols = months.map((m) => {
-      const k = key(m);
-      const items = inRange.filter((d) => d.date.startsWith(k));
-      const label = m.toLocaleString("en-GB", { month: "short" });
-      const year = m.getMonth() === 0 || m === months[0] ? `<small>${m.getFullYear()}</small>` : "";
-      return `<li class="rb-col${items.length ? "" : " is-empty"}">
-        <div class="rb-stack">${items.map((d) =>
-          `<a class="rb" href="#${d.id}" data-scheme="${d.scheme}" title="${esc(SCHEMES[d.scheme].abbr)}: ${esc(d.title)} (${esc(fmtLong(d.date))})"><span class="sr-only">${esc(SCHEMES[d.scheme].abbr)}: ${esc(d.title)}, ${esc(fmtLong(d.date))}</span></a>`).join("")}</div>
-        <span class="rb-count num">${items.length || ""}</span>
-        <span class="rb-month">${label}${year}</span>
-      </li>`;
-    }).join("");
-    const used = Object.keys(SCHEMES).filter((k) => inRange.some((d) => d.scheme === k));
-    return `
-      <div class="ribbon" aria-label="Deadlines over the next 12 months">
-        <div class="ribbon-head">
-          <span class="eyebrow">Next 12 months</span>
-          <span class="ribbon-total"><strong class="num">${inRange.length}</strong> deadlines from ${fmt(key(months[0]) + "-01", { month: "long" })} to ${fmt(key(months[11]) + "-01", { month: "long", year: "numeric" })}</span>
-        </div>
-        <ol class="rb-cols">${cols}</ol>
-        <ul class="rb-legend">${used.map((k) => `<li data-scheme="${k}"><span class="rb-key"></span>${esc(SCHEMES[k].abbr)}</li>`).join("")}</ul>
-      </div>`;
-  }
-
-  /* "Compliance clock" dial: the next 12 months as a circle. Each deadline is a dot at its date,
-     coloured by scheme; the hand marks today. Hovering or tapping a dot shows it in the detail
-     panel; selecting a month lists that month's deadlines there (wired up in app.js). */
-  function dialWindow() {
+  /* "Year at a glance": the next 12 months as a grid, one row per scheme and one column per month.
+     Each deadline is a pill showing its day; the line marks today. Hovering or tapping a pill shows it
+     in the detail panel, selecting a month lists that month, and a scheme name filters the tracker
+     (wired up in app.js). On phones the same deadlines show as a month-by-month list. */
+  function glanceWindow() {
     const { TODAY, parse, upcoming } = CC;
     const start = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
     const end = new Date(TODAY.getFullYear(), TODAY.getMonth() + 12, 1);
     const months = [];
-    for (let i = 0; i <= 12; i++) months.push(new Date(start.getFullYear(), start.getMonth() + i, 1));
+    for (let i = 0; i < 12; i++) months.push(new Date(start.getFullYear(), start.getMonth() + i, 1));
     const items = upcoming.filter((d) => parse(d.date) < end);
     const mkey = (m) => `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}`;
-    return { start, end, months, items, mkey };
+    return { months, items, mkey };
   }
 
   /* Detail panel: one deadline */
-  function dialDetail(d, heading) {
-    const { SCHEMES, esc, fmt, countdown, schemeBadge } = CC;
-    if (!d) return `<p class="dial-hint">No deadlines in the next 12 months.</p>`;
+  function glanceDetail(d, heading) {
+    const { esc, fmt, countdown, schemeBadge } = CC;
+    if (!d) return `<p class="gl-hint">No deadlines in the next 12 months.</p>`;
     const cd = countdown(d.date, d.precision);
+    const when = d.precision === "month" ? fmt(d.date, { month: "long", year: "numeric" }) + " (day to be confirmed)"
+      : fmt(d.date, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
     return `
-      <span class="dial-detail-label">${esc(heading || "Selected deadline")}</span>
-      <div class="dial-detail-top">${schemeBadge(d.scheme)}<span class="countdown num ${cd.cls}">${cd.text}</span></div>
-      <h3 class="dial-detail-title">${esc(d.title)}</h3>
-      <p class="dial-detail-date">${fmt(d.date, { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
-      <p class="dial-detail-who">${esc(d.who)}</p>
-      <a class="dial-detail-link" href="#${d.id}">View deadline <span aria-hidden="true">→</span></a>`;
+      <span class="gl-detail-label">${esc(heading || "Selected deadline")}</span>
+      <div class="gl-detail-top">${schemeBadge(d.scheme)}<span class="countdown num ${cd.cls}">${cd.text}</span></div>
+      <h3 class="gl-detail-title">${esc(d.title)}</h3>
+      <p class="gl-detail-date">${when}</p>
+      <p class="gl-detail-who"><strong>Who it affects:</strong> ${esc(d.who)}</p>
+      <a class="gl-detail-link" href="#${d.id}" data-open="${d.id}">Full details <span aria-hidden="true">↓</span></a>`;
   }
 
   /* Detail panel: one month */
-  function dialMonth(key) {
+  function glanceMonth(key) {
     const { SCHEMES, esc, fmt, countdown } = CC;
-    const { items } = dialWindow();
-    const list = items.filter((d) => d.date.startsWith(key));
+    const list = glanceWindow().items.filter((d) => d.date.startsWith(key));
     const name = fmt(key + "-01", { month: "long", year: "numeric" });
-    if (!list.length) return `<span class="dial-detail-label">${esc(name)}</span><p class="dial-hint">No deadlines this month.</p>`;
+    if (!list.length) return `<span class="gl-detail-label">${esc(name)}</span><p class="gl-hint">Nothing due this month.</p>`;
     return `
-      <span class="dial-detail-label">${esc(name)} · ${list.length} ${list.length === 1 ? "deadline" : "deadlines"}</span>
-      <ul class="dial-month-list">${list.map((d) => `
-        <li data-scheme="${d.scheme}"><a href="#${d.id}" data-id="${d.id}">
-          <span class="dml-day num">${fmt(d.date, { day: "numeric" })}</span>
-          <span class="dml-text"><span class="dml-scheme">${esc(SCHEMES[d.scheme].abbr)}</span>${esc(d.title)}</span>
-          <span class="dml-cd num">${countdown(d.date, d.precision).text}</span>
+      <span class="gl-detail-label">${esc(name)} · ${list.length} ${list.length === 1 ? "deadline" : "deadlines"}</span>
+      <ul class="gl-month-list">${list.map((d) => `
+        <li data-scheme="${d.scheme}"><a href="#${d.id}" data-open="${d.id}">
+          <span class="gml-day num">${d.precision === "month" ? "TBC" : fmt(d.date, { day: "numeric" })}</span>
+          <span class="gml-text"><span class="gml-scheme">${esc(SCHEMES[d.scheme].abbr)}</span>${esc(d.title)}</span>
+          <span class="gml-cd num">${countdown(d.date, d.precision).text}</span>
         </a></li>`).join("")}</ul>`;
   }
 
-  function dial() {
-    const { SCHEMES, TODAY, esc, fmtLong, parse, daysUntil } = CC;
-    const { start, end, months, items, mkey } = dialWindow();
-    const span = end - start;
-    const C = 220, R_OUT = 184, R_IN = 100, R_LABEL = 203;
-    const ang = (t) => -Math.PI / 2 + 2 * Math.PI * ((t - start) / span);
-    const pt = (r, a) => [(C + r * Math.cos(a)).toFixed(1), (C + r * Math.sin(a)).toFixed(1)];
-    const counts = months.slice(0, 12).map((m) => items.filter((d) => d.date.startsWith(mkey(m))).length);
-    const max = Math.max(1, ...counts);
+  function glance() {
+    const { SCHEMES, TODAY, esc, fmt, fmtLong, parse } = CC;
+    const { months, items, mkey } = glanceWindow();
+    const inMonth = (list, m) => list.filter((d) => d.date.startsWith(mkey(m)));
+    const counts = months.map((m) => inMonth(items, m).length);
+    const used = Object.keys(SCHEMES).filter((k) => items.some((d) => d.scheme === k));
+    const daysInMonth = new Date(TODAY.getFullYear(), TODAY.getMonth() + 1, 0).getDate();
+    const todayPct = (((TODAY.getDate() - 0.5) / daysInMonth) * 100).toFixed(1);
+    const label = (d) => `${SCHEMES[d.scheme].abbr}: ${d.title}, ${d.precision === "month" ? fmt(d.date, { month: "long", year: "numeric" }) : fmtLong(d.date)}`;
+    const day = (d) => d.precision === "month" ? "TBC" : String(parse(d.date).getDate());
 
-    const monthGroups = months.slice(0, 12).map((m, i) => {
-      const a0 = ang(m), a1 = ang(months[i + 1]), am = (a0 + a1) / 2;
-      const [x0, y0] = pt(R_OUT, a0), [x1, y1] = pt(R_OUT, a1), [x2, y2] = pt(R_IN, a1), [x3, y3] = pt(R_IN, a0);
-      const [lx, ly] = pt(R_LABEL, am);
-      const name = m.toLocaleString("en-GB", { month: "short" }) + (m.getMonth() === 0 ? ` ’${String(m.getFullYear()).slice(2)}` : "");
+    const head = months.map((m, i) => {
+      const year = i === 0 || m.getMonth() === 0 ? `<span class="gl-year">${m.getFullYear()}</span>` : "";
       const full = m.toLocaleString("en-GB", { month: "long", year: "numeric" });
-      const op = counts[i] ? (0.05 + 0.1 * (counts[i] / max)).toFixed(3) : "0.02";
-      return `<g class="dial-month-g${i === 0 ? " is-now" : ""}" data-month="${mkey(m)}" tabindex="0" role="button" aria-label="${esc(full)}: ${counts[i]} ${counts[i] === 1 ? "deadline" : "deadlines"}">
-        <path class="dial-sector" d="M${x0} ${y0} A${R_OUT} ${R_OUT} 0 0 1 ${x1} ${y1} L${x2} ${y2} A${R_IN} ${R_IN} 0 0 0 ${x3} ${y3} Z" fill-opacity="${op}"/>
-        <text class="dial-month${counts[i] ? " has" : ""}" x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="central">${name}${counts[i] ? ` <tspan class="dial-count">${counts[i]}</tspan>` : ""}</text>
-      </g>`;
-    }).join("");
-    const ticks = months.slice(0, 12).map((m) => {
-      const a = ang(m); const [x0, y0] = pt(R_IN, a), [x1, y1] = pt(R_OUT, a);
-      return `<line class="dial-tick" x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}"/>`;
+      return `<button type="button" class="gl-month${i === 0 ? " is-now" : ""}${counts[i] >= 3 ? " is-busy" : ""}" data-month="${mkey(m)}" aria-label="${esc(full)}: ${counts[i]} ${counts[i] === 1 ? "deadline" : "deadlines"}">
+          ${year}<span class="gl-mname">${m.toLocaleString("en-GB", { month: "short" })}</span><span class="gl-mcount num">${counts[i] || "–"}</span>
+        </button>`;
     }).join("");
 
-    // Dots: deadlines within ~6° of an earlier one step inwards so they never overlap
-    const placed = [];
-    const dots = items.map((d) => {
-      const a = ang(parse(d.date));
-      const near = placed.filter((p) => Math.abs(p - a) < 0.105).length;
-      placed.push(a);
-      const [x, y] = pt(166 - near * 19, a);
-      const label = `${SCHEMES[d.scheme].abbr}: ${d.title} (${fmtLong(d.date)})`;
-      return `<a class="dial-dot" href="#${d.id}" data-id="${d.id}" data-scheme="${d.scheme}" data-month="${d.date.slice(0, 7)}" aria-label="${esc(label)}"><title>${esc(label)}</title><circle class="hit" cx="${x}" cy="${y}" r="15"/><circle class="core" cx="${x}" cy="${y}" r="8"/></a>`;
+    const rows = used.map((k) => {
+      const mine = items.filter((d) => d.scheme === k);
+      const cells = months.map((m, i) => `<div class="gl-cell${i === 0 ? " is-now" : ""}">${inMonth(mine, m).map((d) =>
+        `<a class="gl-pill" href="#${d.id}" data-id="${d.id}" data-scheme="${k}" aria-label="${esc(label(d))}" title="${esc(label(d))}">${day(d)}</a>`).join("")}</div>`).join("");
+      return `<div class="gl-row" data-scheme="${k}">
+          <button type="button" class="gl-scheme" data-filter-to="${k}" title="Show only ${esc(SCHEMES[k].abbr)} deadlines in the tracker"><span class="gl-key"></span>${esc(SCHEMES[k].abbr)}<b class="num">${mine.length}</b></button>
+          ${cells}
+        </div>`;
     }).join("");
 
-    const [hx, hy] = pt(R_OUT - 2, ang(TODAY));
+    const agenda = months.map((m, i) => {
+      const list = inMonth(items, m);
+      if (!list.length) return "";
+      return `<li><span class="gl-ag-month">${m.toLocaleString("en-GB", { month: "short" })}${i === 0 || m.getMonth() === 0 ? ` ${m.getFullYear()}` : ""}</span>
+          <ul>${list.map((d) => `<li data-scheme="${d.scheme}"><a href="#${d.id}" data-open="${d.id}"><span class="num">${day(d)}</span><span><span class="gl-ag-scheme">${esc(SCHEMES[d.scheme].abbr)}</span><span class="gl-ag-title">${esc(d.title)}</span></span></a></li>`).join("")}</ul>
+        </li>`;
+    }).join("");
+
     const next = items[0];
-    const centre = next ? `
-      <circle class="dial-centre" cx="${C}" cy="${C}" r="${R_IN - 12}"/>
-      <text class="dial-n" x="${C}" y="${C - 6}" text-anchor="middle">${daysUntil(next.date)}</text>
-      <text class="dial-n-label" x="${C}" y="${C + 22}" text-anchor="middle">days to next</text>
-      <text class="dial-n-label" x="${C}" y="${C + 38}" text-anchor="middle">deadline</text>` : "";
-
-    const used = Object.keys(SCHEMES).map((k) => [k, items.filter((d) => d.scheme === k).length]).filter(([, c]) => c);
-    const busiest = counts.indexOf(Math.max(...counts));
-
     return `
-      <div class="dial-panel">
-        <figure class="dial-figure">
-          <svg class="dial" viewBox="0 0 440 440" role="group" aria-label="Compliance clock: ${items.length} deadlines over the next 12 months">
-            <circle class="dial-rim" cx="${C}" cy="${C}" r="${R_OUT + 10}"/>
-            ${monthGroups}${ticks}
-            <line class="dial-hand" x1="${C}" y1="${C}" x2="${hx}" y2="${hy}"/>
-            <circle class="dial-hand-tip" cx="${hx}" cy="${hy}" r="4"/>
-            ${centre}
-            ${dots}
-          </svg>
-          <figcaption class="dial-caption">Today is marked by the hand. Busiest: <strong>${esc(months[busiest].toLocaleString("en-GB", { month: "long", year: "numeric" }))}</strong> (${counts[busiest]}).</figcaption>
-        </figure>
-        <div class="dial-side">
-          <span class="eyebrow">The compliance clock</span>
-          <h2 class="dial-title">Your next 12 months at a glance</h2>
-          <p class="dial-intro">Hover or tap a dot to see the deadline. Select a month to list everything due that month.</p>
-          <div class="dial-detail" id="dialDetail" aria-live="polite">${dialDetail(next, "Next deadline")}</div>
-          <ul class="dial-legend" aria-label="Schemes">${used.map(([k, c]) => `<li data-scheme="${k}" tabindex="0"><span class="dial-key"></span>${esc(SCHEMES[k].abbr)}<b class="num">${c}</b></li>`).join("")}</ul>
+      <div class="glance">
+        <div class="glance-head">
+          <div>
+            <span class="eyebrow">Year at a glance</span>
+            <h2 class="glance-title">The next 12 months, scheme by scheme</h2>
+          </div>
+          <p class="glance-intro">Each pill is a deadline, showing its day of the month. Hover or tap one for details, pick a month to list it, or pick a scheme to filter the tracker.</p>
+        </div>
+        <div class="glance-body">
+          <div class="gl-grid" style="--today:${todayPct}%" role="group" aria-label="${items.length} deadlines over the next 12 months, by scheme and month">
+            <div class="gl-row gl-head"><span class="gl-corner">Scheme</span>${head}</div>
+            ${rows}
+            <p class="gl-key-note">The line marks today, ${TODAY.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}. Months with 3 or more deadlines are in bold.</p>
+          </div>
+          <ol class="gl-agenda" aria-label="Deadlines by month">${agenda}</ol>
+          <div class="gl-detail" id="glanceDetail" aria-live="polite">${glanceDetail(next, "Next deadline")}</div>
         </div>
       </div>`;
   }
@@ -264,7 +222,7 @@
       statSchemes: st.schemes,
       statVerified: st.verified,
       schemeStrip: schemeStrip(),
-      ribbon: dial(), /* the hero diagram slot (marker kept as "ribbon") */
+      ribbon: glance(), /* the hero diagram slot (marker kept as "ribbon") */
       resultCount: resultCount(CC.upcoming.length, false),
       listView: list(CC.upcoming),
       horizonGrid: horizon(CC.horizon),
@@ -273,5 +231,5 @@
     };
   }
 
-  CC.home = { heroNext, nextList, stats, schemeStrip, ribbon, dial, dialDetail, dialMonth, resultCount, list, horizon, changes, schemes, all };
+  CC.home = { heroNext, nextList, stats, schemeStrip, glance, glanceDetail, glanceMonth, resultCount, list, horizon, changes, schemes, all };
 })();
